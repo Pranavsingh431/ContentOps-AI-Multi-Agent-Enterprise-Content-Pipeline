@@ -1,3 +1,5 @@
+import React from "react";
+
 export default function InputBox({ value, onChange, onSubmit, loading }) {
   return (
     <form onSubmit={onSubmit} style={styles.form}>

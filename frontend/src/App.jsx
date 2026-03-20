@@ -1,3 +1,4 @@
+import React from "react";
 import { useState } from "react";
 import InputBox from "./components/InputBox";
 
@@ -5,7 +6,7 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 export default function App() {
   const [text, setText] = useState("");
-  const [response, setResponse] = useState(null);
+  const [generatedContent, setGeneratedContent] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -23,14 +24,22 @@ export default function App() {
         body: JSON.stringify({ text }),
       });
 
+      const data = await result.json();
       if (!result.ok) {
-        throw new Error("Request failed");
+        setGeneratedContent("");
+        setError(data?.detail || "Unable to process request.");
+        return;
+      }
+      const content = data?.generated_content || data?.output || "";
+      if (!content) {
+        setGeneratedContent("");
+        setError("No generated content was returned by the backend.");
+        return;
       }
 
-      const data = await result.json();
-      setResponse(data);
+      setGeneratedContent(content);
     } catch {
-      setResponse(null);
+      setGeneratedContent("");
       setError("Unable to process request.");
     } finally {
       setLoading(false);
@@ -50,18 +59,10 @@ export default function App() {
 
         {error && <p style={styles.error}>{error}</p>}
 
-        {response && (
+        {generatedContent && (
           <div style={styles.responseBox}>
-            <h2 style={styles.responseTitle}>Response</h2>
-            <p style={styles.row}>
-              <strong>Status:</strong> {response.status}
-            </p>
-            <p style={styles.row}>
-              <strong>Input:</strong> {response.input}
-            </p>
-            <p style={styles.row}>
-              <strong>Output:</strong> {response.output}
-            </p>
+            <h2 style={styles.responseTitle}>Generated Content</h2>
+            <div style={styles.content}>{generatedContent}</div>
           </div>
         )}
       </section>
@@ -105,9 +106,16 @@ const styles = {
     fontSize: "1.1rem",
     color: "#111827",
   },
-  row: {
+  content: {
     margin: 0,
     color: "#374151",
+    fontSize: "1rem",
+    lineHeight: 1.7,
+    backgroundColor: "#f9fafb",
+    border: "1px solid #e5e7eb",
+    borderRadius: "0.5rem",
+    padding: "1rem",
+    whiteSpace: "pre-wrap",
     wordBreak: "break-word",
   },
   error: {
